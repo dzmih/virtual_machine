@@ -1,3 +1,6 @@
+class StackUnderflowError(Exception):
+    pass
+
 class VirtualMachine:
     def __init__(self, default_actions=None):
         self.stack = []
@@ -19,6 +22,9 @@ class VirtualMachine:
         "load": self.load,
         "jump": self.jump,
         "halt": self.halt,
+        "jz": self.jz,
+        "sub": self.sub,
+        "step": self.step
     }
         
     #Private
@@ -31,9 +37,7 @@ class VirtualMachine:
 
     def _pop_stack(self):
         return self.stack.pop() 
-
-    
-
+    ############################
         
     def process(self, action, *args, custom_actions=None, **kwargs):
         actions = custom_actions or self.default_actions
@@ -70,38 +74,43 @@ class VirtualMachine:
         self.pc += 1
 
     def mul(self):
-        if not self.stack:
-            return
-        t = self.stack[0]
-        for i in range(1, len(self.stack)):
-            t *= self.stack[i]
-        self.stack = [t]
-        self.pc += 1
+        if len(self.stack) >= 2:
+            s = self.stack[-2] * self.stack[-1]
+            self.stack[-2:] = [s]
+            self.pc += 1
+        else:
+            raise StackUnderflowError("Stack contains fewer than 2 values.")
 
     def div(self):
-        if not self.stack:
-            return
-        t = self.stack[0]
-        for i in range(1, len(self.stack)):
-            t //= self.stack[i]
-        self.stack = [t]
-        self.pc += 1
+        if len(self.stack) >= 2:
+            s = self.stack[-2] / self.stack[-1]
+            self.stack[-2:] = [s]
+            self.pc += 1
+        else:
+            raise StackUnderflowError("Stack contains fewer than 2 values.")
         
-    def run(self, program:list[tuple]):
+    def run(self, program: list[tuple]):
         while self.pc < len(program) and self.running:
-            if len(program[self.pc]) > 1:
-                self.process(program[self.pc][0], program[self.pc][1])
-            if len(program[self.pc]) == 1:
-                self.process(program[self.pc][0])
+            instruction = program[self.pc]
+            action = instruction[0]
+            args = instruction[1:]
+            self.process(action, *args)
 
     def add(self):
-        if not self.stack:
-            return
-        t = self.stack[0]
-        for i in range(1, len(self.stack)):
-            t += self.stack[i]
-        self.stack = [t]
-        self.pc += 1
+        if len(self.stack) >= 2:
+            s = self.stack[-2] + self.stack[-1]
+            self.stack[-2:] = [s]
+            self.pc += 1
+        else:
+            raise StackUnderflowError("Stack contains fewer than 2 values.")
+
+    def sub(self):
+        if len(self.stack) >= 2:
+            s = self.stack[-2] - self.stack[-1]
+            self.stack[-2:] = [s]
+            self.pc += 1
+        else:
+            raise StackUnderflowError("Stack contains fewer than 2 values.")
 
     def repl(self):
         while True:
@@ -132,22 +141,41 @@ class VirtualMachine:
         self.pc += 1
     
     def jump(self, index):
-        self.pc = index
+        self.pc = int(index)
     
     def halt(self):
         self.running = False
 
+    def jz(self, index):
+        if len(self.stack) >= 1:
+            value = self._pop_stack()
+            if value == 0:
+                self.pc = int(index)
+            else:
+                self.pc += 1
+        else:
+            raise StackUnderflowError("Stack contains fewer than 1 value.")
+        
+    def step(self, program: list[tuple]):
+        input("Press Enter for step")
+
+        instruction = program[self.pc]
+        action = instruction[0]
+        args = instruction[1:]
+
+        self.process(action, *args)
 
 main_vm = VirtualMachine()
 
 program = [
-    ("push", 5),
-    ("push", 10),
-    ("add",),
+    ("push", 0),
+    ("jz", 4),
+    ("push", 999),
     ("prnt", "stack"),
-    ("jump", 0),
-    ("halt",)
+    ("push", 111),
+    ("prnt", "stack"),
+    ("halt",),
 ]
 
-main_vm.run(program)
+main_vm.step(program)
 
