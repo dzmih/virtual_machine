@@ -24,7 +24,8 @@ class VirtualMachine:
         "halt": self.halt,
         "jz": self.jz,
         "sub": self.sub,
-        "step": self.step
+        "step": self.step,
+        "vm_debug": self.vm_debug,
     }
         
     #Private
@@ -164,6 +165,16 @@ class VirtualMachine:
         args = instruction[1:]
 
         self.process(action, *args)
+    
+    def vm_debug(self, program):
+        while self.running:
+            print("####################")
+            print(self.pc)
+            print(f"Instruction: {program[self.pc][0]} {program[self.pc][1:]}")
+            print(self.stack)
+            print("####################")
+            self.step(program)
+
 
 main_vm = VirtualMachine()
 
@@ -177,5 +188,5 @@ program = [
     ("halt",),
 ]
 
-main_vm.step(program)
+main_vm.vm_debug(program)
 
