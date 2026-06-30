@@ -158,23 +158,61 @@ class VirtualMachine:
             raise StackUnderflowError("Stack contains fewer than 1 value.")
         
     def step(self, program: list[tuple]):
-        input("Press Enter for step")
-
         instruction = program[self.pc]
         action = instruction[0]
         args = instruction[1:]
-
         self.process(action, *args)
+
+    def dump_state(self):
+        print("####################")
+        print(self.pc)
+        print(f"Instruction: {program[self.pc][0]} {program[self.pc][1:]}")
+        print(self.stack)
+        print("####################")
     
     def vm_debug(self, program):
-        while self.running:
-            print("####################")
-            print(self.pc)
-            print(f"Instruction: {program[self.pc][0]} {program[self.pc][1:]}")
-            print(self.stack)
-            print("####################")
-            self.step(program)
+        breakpoints = set()
+        running_debugger = True
 
+        while running_debugger and self.running and self.pc < len(program):
+            self.dump_state()
+
+            try:
+                command = input("<dbg> ").strip()
+            except (EOFError, KeyboardInterrupt):
+                print()
+                break
+
+            if not command:
+                continue
+
+            parts = command.split()
+            cmd = parts[0]
+            args = parts[1:]
+
+            if cmd in {"step", "s"}:
+                self.step(program)
+            elif cmd in {"continue", "c"}:
+                while self.running and self.pc < len(program):
+                    if self.pc in breakpoints:
+                        break
+                    self.step(program)
+            elif cmd == "break":
+                if args:
+                    breakpoints.add(int(args[0]))
+                    print(f"breakpoint added at {args[0]}")
+                else:
+                    print("break needs an address")
+            elif cmd == "quit":
+                running_debugger = False
+            elif cmd == "stack":
+                print(self.stack)
+            elif cmd == "memory":
+                for elem in self.memory: 
+                    if elem != None: print(self.memory[elem])
+            else:
+                print("unknown command")
+            
 
 main_vm = VirtualMachine()
 
