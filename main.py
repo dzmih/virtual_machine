@@ -1,3 +1,4 @@
+import sys
 class StackUnderflowError(Exception):
     pass
 
@@ -26,6 +27,7 @@ class VirtualMachine:
         "sub": self.sub,
         "step": self.step,
         "vm_debug": self.vm_debug,
+        "assemble": self.assemble,
     }
         
     #Private
@@ -212,6 +214,14 @@ class VirtualMachine:
                     if elem != None: print(self.memory[elem])
             else:
                 print("unknown command")
+
+    def assemble(self, source):
+        with open(source, "r") as f:
+            for line in f:
+                parts = line.split()
+                if not parts:
+                    continue
+                self.process(parts[0], *parts[1:])
             
 
 main_vm = VirtualMachine()
@@ -226,5 +236,7 @@ program = [
     ("halt",),
 ]
 
-main_vm.vm_debug(program)
+file = sys.argv[1]
+
+main_vm.assemble(file)
 
