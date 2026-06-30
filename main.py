@@ -1,5 +1,9 @@
 import sys
+
 class StackUnderflowError(Exception):
+    pass
+
+class UnknownInstruction(Exception):
     pass
 
 class VirtualMachine:
@@ -216,12 +220,30 @@ class VirtualMachine:
                 print("unknown command")
 
     def assemble(self, source):
+        command = None
+        argument = None
+        program = []
         with open(source, "r") as f:
             for line in f:
                 parts = line.split()
                 if not parts:
                     continue
-                self.process(parts[0], *parts[1:])
+                if parts[0] not in self.default_actions:
+                    raise UnknownInstruction("Unknown Instruction")
+                if len(parts) == 2 and parts[1].isdigit():
+                    command = parts[0]
+                    argument = int(parts[1])
+                    program.append((command, argument))
+                elif len(parts) == 2:
+                    command = parts[0]
+                    argument = parts[1]
+                    program.append((command, argument))
+                elif len(parts) == 1:
+                    command = parts[0]
+                    program.append((command,))
+        return program
+
+
             
 
 main_vm = VirtualMachine()
@@ -236,7 +258,7 @@ program = [
     ("halt",),
 ]
 
-file = sys.argv[1]
-
-main_vm.assemble(file)
+program = main_vm.assemble("program.asm")
+print(program)
+main_vm.run(program)
 
